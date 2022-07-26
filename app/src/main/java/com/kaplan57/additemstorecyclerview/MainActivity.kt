@@ -1,22 +1,30 @@
 package com.kaplan57.additemstorecyclerview
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.kaplan57.additemstorecyclerview.adapter.MainRecyclerAdapter
 import com.kaplan57.additemstorecyclerview.databinding.ActivityMainBinding
+import com.kaplan57.additemstorecyclerview.datamodel.TextModel
 import com.kaplan57.additemstorecyclerview.dialog.AddTextDialog
-import com.kaplan57.additemstorecyclerview.eventbus.OnItemRemovedEvent
-import com.kaplan57.additemstorecyclerview.eventbus.OnTextAdded
+import com.kaplan57.additemstorecyclerview.eventbus.OnItemAddedEvent
+import com.kaplan57.additemstorecyclerview.eventbus.OnRecycItemClickedEvent
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
-    lateinit var binding: ActivityMainBinding
-    val textList = ArrayList<String>()
-    lateinit var adapter: MainRecyclerAdapter
-    val TAG = "MyTagHere"
+    private val textModelInstance: TextModel by lazy {
+        TextModel.getTextInstance()
+    }
+    private lateinit var binding: ActivityMainBinding
+    private  lateinit var adapter: MainRecyclerAdapter
+    private var isRemoveSection: Boolean = true
+
 
     override fun onStart() {
         super.onStart()
@@ -35,18 +43,24 @@ class MainActivity : AppCompatActivity() {
 
 
         addItemsToTheList()
-        Log.d(TAG, "onCreate: ${textList}")
-        adapter = MainRecyclerAdapter(textList,false)
+        adapter = MainRecyclerAdapter(textModelInstance.getTextList(),false)
 
         setUpRecyclerView()
         setListeners()
     }
 
     private fun addItemsToTheList() {
+        val textList = textModelInstance.getTextList()
         textList.add("Text1")
         textList.add("Text2")
         textList.add("Text3")
         textList.add("Text4")
+
+        val subTextList = textModelInstance.getSubTextList()
+        subTextList.add("SubText1")
+        subTextList.add("SubText2")
+        subTextList.add("SubText3")
+        subTextList.add("SubText4")
     }
 
     private fun setUpRecyclerView() {
@@ -55,28 +69,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setListeners() {
-        Log.d(TAG, "setListeners: RecyclerView clicked")
 
-        binding.btnAdd.setOnClickListener {
-            AddTextDialog().show(supportFragmentManager,"alertDialog")
+        binding.btnLeft.setOnClickListener {
+            startActivity()
         }
 
-        binding.btnRemove.setOnClickListener {
-            adapter.show = !adapter.show
-            adapter.notifyItemRangeChanged(0,textList.size)
+        binding.btnRight.setOnClickListener {
+            if(isRemoveSection) {
+                binding.btnRight.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_check,null)
+                isRemoveSection = false
+            }
+            else{
+                binding.btnRight.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_remove,null)
+                adapter.deleteSelectedItems()
+                isRemoveSection = true
+            }
+            adapter.changeCheckBoxVisibility()
         }
     }
 
-
-    @Subscribe
-    fun onItemRemovedEvent(event: OnItemRemovedEvent){
-        textList.removeAt(event.position)
-        adapter.notifyItemRemoved(event.position)
+    private fun startActivity() {
+        val intent = Intent(this,NoteActivity::class.java)
+        startActivity(intent)
     }
 
-    @Subscribe
-    fun onTextAddedEvent(textAddedEvent: OnTextAdded){
-        textList.add(textAddedEvent.text)
-        adapter.notifyItemInserted(textList.size-1)
+
+//    private fun showDialog() {
+//        AddTextDialog().show(supportFragmentManager,"alertDialog")
+//    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN,sticky = true)
+    fun onItemAddedEvent(event:OnItemAddedEvent){
+        adapter.addItem(event.text,event.subText)
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN,sticky = true)
+    fun onMoveToNoteActivity(event:OnRecycItemClickedEvent){
+        val intent = Intent(this,NoteActivity::class.java)
+        intent.putExtra("position",event.position)
+        startActivityForResult(intent,12)
+    }
+
 }

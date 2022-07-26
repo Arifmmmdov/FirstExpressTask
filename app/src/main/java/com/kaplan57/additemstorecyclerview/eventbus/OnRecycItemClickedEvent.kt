@@ -1,3 +1,3 @@
 package com.kaplan57.additemstorecyclerview.eventbus
 
-data class OnTextAdded(val text:String)
+data class OnRecycItemClickedEvent(val position:Int)
