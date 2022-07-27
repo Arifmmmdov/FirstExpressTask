@@ -9,21 +9,25 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.kaplan57.additemstorecyclerview.adapter.MainRecyclerAdapter
 import com.kaplan57.additemstorecyclerview.databinding.ActivityMainBinding
 import com.kaplan57.additemstorecyclerview.datamodel.TextModel
-import com.kaplan57.additemstorecyclerview.dialog.AddTextDialog
 import com.kaplan57.additemstorecyclerview.eventbus.OnItemAddedEvent
+import com.kaplan57.additemstorecyclerview.eventbus.OnItemUpdatedEvent
 import com.kaplan57.additemstorecyclerview.eventbus.OnRecycItemClickedEvent
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
     private val textModelInstance: TextModel by lazy {
         TextModel.getTextInstance()
     }
-    private lateinit var binding: ActivityMainBinding
-    private  lateinit var adapter: MainRecyclerAdapter
+    private val binding by lazy {
+        ActivityMainBinding.inflate(layoutInflater)
+    }
+    private  val adapter by lazy {
+        MainRecyclerAdapter(textModelInstance.getTextList(),false)
+    }
     private var isRemoveSection: Boolean = true
+    private val TAG = "MyTagHere"
 
 
     override fun onStart() {
@@ -38,29 +42,29 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
 
         addItemsToTheList()
-        adapter = MainRecyclerAdapter(textModelInstance.getTextList(),false)
-
         setUpRecyclerView()
         setListeners()
     }
 
     private fun addItemsToTheList() {
-        val textList = textModelInstance.getTextList()
-        textList.add("Text1")
-        textList.add("Text2")
-        textList.add("Text3")
-        textList.add("Text4")
+        val instance = TextModel.getTextInstance()
+        initializeTextLists(instance)
+        Log.d(TAG, "addItemsToTheList: ")
 
-        val subTextList = textModelInstance.getSubTextList()
-        subTextList.add("SubText1")
-        subTextList.add("SubText2")
-        subTextList.add("SubText3")
-        subTextList.add("SubText4")
+        instance.addText("Text1")
+        instance.addText("Text2","Note2")
+        instance.addText("Text3","Note3")
+        instance.addText("Text4","Note4")
+        instance.addText("Text5","Note5")
+    }
+
+    private fun initializeTextLists(instance: TextModel) {
+        instance.getSubTextList()
+        instance.getTextList()
     }
 
     private fun setUpRecyclerView() {
@@ -71,7 +75,7 @@ class MainActivity : AppCompatActivity() {
     private fun setListeners() {
 
         binding.btnLeft.setOnClickListener {
-            startActivity()
+            moveToAnotherActivity()
         }
 
         binding.btnRight.setOnClickListener {
@@ -88,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startActivity() {
+    private fun moveToAnotherActivity() {
         val intent = Intent(this,NoteActivity::class.java)
         startActivity(intent)
     }
@@ -100,14 +104,21 @@ class MainActivity : AppCompatActivity() {
 
     @Subscribe(threadMode = ThreadMode.MAIN,sticky = true)
     fun onItemAddedEvent(event:OnItemAddedEvent){
-        adapter.addItem(event.text,event.subText)
+        adapter.addItem(textModelInstance.getTextList())
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN,sticky = true)
+    @Subscribe(threadMode = ThreadMode.MAIN,sticky = false)
     fun onMoveToNoteActivity(event:OnRecycItemClickedEvent){
         val intent = Intent(this,NoteActivity::class.java)
+        Log.d(TAG, "onMoveToNoteActivity: ${event.position}")
         intent.putExtra("position",event.position)
         startActivityForResult(intent,12)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    fun onItemUpdatedEvent(event:OnItemUpdatedEvent){
+        Log.d(TAG, "onItemUpdatedEvent: ${event.position}")
+        adapter.updateAdapterVisibility(textModelInstance.getTextList(),event.position)
     }
 
 }

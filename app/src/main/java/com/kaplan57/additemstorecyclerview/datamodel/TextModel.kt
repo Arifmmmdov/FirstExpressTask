@@ -1,5 +1,7 @@
 package com.kaplan57.additemstorecyclerview.datamodel
 
+import android.util.Log
+
 class TextModel {
     companion object{
         private var instances:TextModel? = null
@@ -29,11 +31,20 @@ class TextModel {
         return subText as ArrayList<String>
     }
 
-    fun addSubText(text:String){
-        subText!!.add(text)
+    fun addText(title:String,note:String){
+        subText!!.add(note)
+        textList!!.add(title)
     }
 
     fun addText(text:String){
         textList!!.add(text)
+        subText!!.add("")
+    }
+
+    fun updateItems(position:Int, title:String, note:String){
+        Log.d("MyTagHere", "updateItems: ")
+        textList!![position] = title
+        subText!![position] = note
+
     }
 }

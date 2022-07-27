@@ -16,7 +16,7 @@ import com.kaplan57.additemstorecyclerview.eventbus.OnRecycItemClickedEvent
 import org.greenrobot.eventbus.EventBus
 
 class MainRecyclerAdapter(
-    private val textList:ArrayList<String>, private var show:Boolean) : RecyclerView.Adapter<MainRecyclerAdapter.ViewHolder>() {
+    var textList:ArrayList<String>, private var show:Boolean) : RecyclerView.Adapter<MainRecyclerAdapter.ViewHolder>() {
 
     private val TAG = "MyTagHere"
 
@@ -25,18 +25,23 @@ class MainRecyclerAdapter(
         notifyItemRangeChanged(0,textList.size)
     }
 
-    fun addItem(item:String,subItem:String){
-        val instance = TextModel.getTextInstance()
-        instance.addText(item)
-        instance.addSubText(subItem)
-        textList.add(item)
+    fun addItem(textList: ArrayList<String> ){
+        this.textList = textList
         notifyItemInserted(textList.size-1)
+    }
+
+    fun updateAdapterVisibility(textList: ArrayList<String>, position:Int){
+        this.textList = textList
+        Log.d(TAG, "updateAdapterVisibility: ${this.textList.size}")
+        notifyItemChanged(position)
+        Log.d(TAG, "updateAdapterVisibility: ${this.textList.size}")
+
     }
 
     class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         private val itemText:TextView = itemView.findViewById(R.id.itemText)
         private val checkBox:CheckBox = itemView.findViewById(R.id.checkbox)
-        private val recyclerItem: LinearLayoutCompat = itemView.findViewById(R.id.itemText)
+        private val recyclerItem: LinearLayoutCompat = itemView.findViewById(R.id.recycItem)
 
 
         fun setText(textList: ArrayList<String>,position: Int){
@@ -59,7 +64,7 @@ class MainRecyclerAdapter(
             }
 
             recyclerItem.setOnClickListener{
-                EventBus.getDefault().postSticky(OnRecycItemClickedEvent(position))
+                EventBus.getDefault().post(OnRecycItemClickedEvent(position))
             }
         }
 
@@ -81,6 +86,7 @@ class MainRecyclerAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyc_item,parent,false))
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        Log.d(TAG, "onBindViewHolder: $position")
         holder.setText(textList,position)
         holder.checkBoxVisibility(show)
         holder.setListeners(position)
