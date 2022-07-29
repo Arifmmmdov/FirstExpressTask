@@ -1,4 +1,4 @@
-package com.kaplan57.additemstorecyclerview
+package com.kaplan57.additemstorecyclerview.activities
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -97,6 +97,10 @@ class NoteActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         Log.d("MyTagHere", "onActivityResult: ")
+    }
+
+    fun CallIntentMethod(){
+        //Todo: how to call another activity without EventBus
     }
 
 }

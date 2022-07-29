@@ -8,15 +8,16 @@ import android.widget.CheckBox
 import android.widget.TextView
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Entity
 import com.kaplan57.additemstorecyclerview.R
 import com.kaplan57.additemstorecyclerview.datamodel.RemovableElements
-import com.kaplan57.additemstorecyclerview.datamodel.TextModel
-import com.kaplan57.additemstorecyclerview.eventbus.OnItemAddedEvent
-import com.kaplan57.additemstorecyclerview.eventbus.OnRecycItemClickedEvent
-import org.greenrobot.eventbus.EventBus
+import com.kaplan57.additemstorecyclerview.room.entity.entity.NoteEntity
 
+interface CallOnClicked{
+    fun onItemClicked(position:Int)
+}
 class MainRecyclerAdapter(
-    var textList:ArrayList<String>, private var show:Boolean) : RecyclerView.Adapter<MainRecyclerAdapter.ViewHolder>() {
+    var textList:List<NoteEntity>, private var show:Boolean,private val onClicked: CallOnClicked) : RecyclerView.Adapter<MainRecyclerAdapter.ViewHolder>() {
 
     private val TAG = "MyTagHere"
 
@@ -25,27 +26,25 @@ class MainRecyclerAdapter(
         notifyItemRangeChanged(0,textList.size)
     }
 
-    fun addItem(textList: ArrayList<String> ){
-        this.textList = textList
+    fun addItem(newTextList: NoteEntity ){
+        textList = textList + newTextList
         notifyItemInserted(textList.size-1)
     }
 
-    fun updateAdapterVisibility(textList: ArrayList<String>, position:Int){
-        this.textList = textList
-        Log.d(TAG, "updateAdapterVisibility: ${this.textList.size}")
+    fun updateAdapterVisibility(title:String, position:Int){
+        this.textList[position].title = title
         notifyItemChanged(position)
-        Log.d(TAG, "updateAdapterVisibility: ${this.textList.size}")
 
     }
 
-    class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         private val itemText:TextView = itemView.findViewById(R.id.itemText)
         private val checkBox:CheckBox = itemView.findViewById(R.id.checkbox)
         private val recyclerItem: LinearLayoutCompat = itemView.findViewById(R.id.recycItem)
 
 
-        fun setText(textList: ArrayList<String>,position: Int){
-            itemText.text= textList[position]
+        fun setText(title:String){
+            itemText.text= title
         }
 
         fun checkBoxVisibility(show: Boolean){
@@ -64,7 +63,8 @@ class MainRecyclerAdapter(
             }
 
             recyclerItem.setOnClickListener{
-                EventBus.getDefault().post(OnRecycItemClickedEvent(position))
+//                EventBus.getDefault().post(OnRecycItemClickedEvent(position))
+                onClicked.onItemClicked(position)
             }
         }
 
@@ -86,8 +86,7 @@ class MainRecyclerAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyc_item,parent,false))
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        Log.d(TAG, "onBindViewHolder: $position")
-        holder.setText(textList,position)
+        holder.setText(textList[position].title)
         holder.checkBoxVisibility(show)
         holder.setListeners(position)
 
@@ -99,15 +98,21 @@ class MainRecyclerAdapter(
         val instance = RemovableElements.myInstance()
         val selectedItems = instance.myMap()
         val reverseOrder = selectedItems.toSortedMap(reverseOrder())
-        Log.d(TAG, "deleteSelectedItems: $reverseOrder")
-        
+        //TODO remove items according to the selectedItems
+
         reverseOrder.forEach{
             Log.d(TAG, "deleteSelectedItems: ${it.key}")
             textList.removeAt(it.key)
             instance.removeAt(it.key)
             notifyItemRemoved(it.key)
         }
+        val positions = selectedItems.filter {
+            it.value
+        }.keys.toMutableList()
 
+        positions.forEach{
+            this.textList[it].
+        }
     }
 
 }
